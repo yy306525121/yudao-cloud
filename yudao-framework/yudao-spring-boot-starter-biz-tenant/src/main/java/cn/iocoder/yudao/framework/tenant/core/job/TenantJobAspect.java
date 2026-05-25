@@ -7,7 +7,6 @@ import cn.iocoder.yudao.framework.common.util.json.JsonUtils;
 import cn.iocoder.yudao.framework.tenant.core.service.TenantFrameworkService;
 import cn.iocoder.yudao.framework.tenant.core.util.TenantUtils;
 import com.xxl.job.core.context.XxlJobContext;
-import com.xxl.job.core.context.XxlJobHelper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -36,11 +35,11 @@ public class TenantJobAspect {
     private final TenantFrameworkService tenantFrameworkService;
 
     @Around("@annotation(tenantJob)")
-    public void around(ProceedingJoinPoint joinPoint, TenantJob tenantJob) {
+    public Object around(ProceedingJoinPoint joinPoint, TenantJob tenantJob) {
         // 获得租户列表
         List<Long> tenantIds = tenantFrameworkService.getTenantIds();
         if (CollUtil.isEmpty(tenantIds)) {
-            return;
+            return null;
         }
 
         // 逐个租户，执行 Job
@@ -59,17 +58,16 @@ public class TenantJobAspect {
                     results.put(tenantId, ExceptionUtil.getRootCauseMessage(e));
                     success.set(false);
                     // 打印异常
-                    XxlJobHelper.log(StrUtil.format("[多租户({}) 执行任务({})，发生异常：{}]",
-                            tenantId, joinPoint.getSignature(), ExceptionUtils.getStackTrace(e)));
+                    log.error("[多租户({}) 执行任务({})，发生异常：{}]",
+                            tenantId, joinPoint.getSignature(), ExceptionUtils.getStackTrace(e));
                 }
             });
         });
-        // 记录执行结果
-        if (success.get()) {
-            XxlJobHelper.handleSuccess(JsonUtils.toJsonString(results));
-        } else {
-            XxlJobHelper.handleFail(JsonUtils.toJsonString(results));
+        String result = JsonUtils.toJsonString(results);
+        if (!success.get()) {
+            throw new IllegalStateException(result);
         }
+        return result;
     }
 
 }
