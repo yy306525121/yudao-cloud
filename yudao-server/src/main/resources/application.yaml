@@ -115,12 +115,38 @@ easy-trans:
 
 --- #################### 定时任务相关配置 ####################
 
+yudao:
+  job:
+    type: quartz # 调度类型：xxl（默认，使用 XXL-Job 调度中心）、quartz（内嵌 Quartz）、none（关闭调度）
+
 xxl:
   job:
     executor:
       appname: ${spring.application.name} # 执行器 AppName
       logpath: ${user.home}/logs/xxl-job/${spring.application.name} # 执行器运行日志文件存储磁盘路径
     accessToken: default_token # 执行器通讯TOKEN
+
+spring:
+  quartz:
+    auto-startup: true
+    scheduler-name: schedulerName
+    job-store-type: jdbc
+    wait-for-jobs-to-complete-on-shutdown: true
+    properties:
+      org:
+        quartz:
+          scheduler:
+            instanceName: schedulerName
+            instanceId: AUTO
+          jobStore:
+            class: org.springframework.scheduling.quartz.LocalDataSourceJobStore
+            isClustered: true
+            clusterCheckinInterval: 15000
+            misfireThreshold: 60000
+          threadPool:
+            threadCount: 25
+            threadPriority: 5
+            class: org.quartz.simpl.SimpleThreadPool
 
 --- #################### 验证码相关配置 ####################
 
