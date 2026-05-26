@@ -56,6 +56,14 @@ public interface ErrorCodeConstants {
     ErrorCode DATA_SOURCE_CONFIG_NOT_EXISTS = new ErrorCode(1_001_007_000, "数据源配置不存在");
     ErrorCode DATA_SOURCE_CONFIG_NOT_OK = new ErrorCode(1_001_007_001, "数据源配置不正确，无法进行连接");
 
+    // ========== 后台模型 1-001-008-000 ==========
+    ErrorCode BACKEND_MODEL_NOT_EXISTS = new ErrorCode(1_001_008_000, "后台模型不存在");
+    ErrorCode BACKEND_MODEL_DISABLED = new ErrorCode(1_001_008_001, "后台模型已关闭");
+    ErrorCode BACKEND_MODEL_SQL_INVALID = new ErrorCode(1_001_008_002, "后台模型 SQL 不正确");
+    ErrorCode BACKEND_MODEL_SQL_ONLY_SELECT = new ErrorCode(1_001_008_003, "后台模型只允许配置单条 SELECT 查询");
+    ErrorCode BACKEND_MODEL_DB_NOT_SUPPORT = new ErrorCode(1_001_008_004, "后台模型暂不支持该数据源类型");
+    ErrorCode BACKEND_MODEL_SQL_EXECUTE_FAIL = new ErrorCode(1_001_008_005, "后台模型 SQL 执行失败：{}");
+
     // ========== 学生 1-001-201-000 ==========
     ErrorCode DEMO01_CONTACT_NOT_EXISTS = new ErrorCode(1_001_201_000, "示例联系人不存在");
     ErrorCode DEMO02_CATEGORY_NOT_EXISTS = new ErrorCode(1_001_201_001, "示例分类不存在");
