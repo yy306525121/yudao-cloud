@@ -5,6 +5,8 @@ import cn.iocoder.yudao.framework.quartz.core.scheduler.SchedulerManager;
 import cn.iocoder.yudao.framework.quartz.core.service.JobLogFrameworkService;
 import lombok.extern.slf4j.Slf4j;
 import org.quartz.Scheduler;
+import org.quartz.spi.TriggerFiredBundle;
+import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -17,9 +19,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.quartz.SchedulerFactoryBean;
+import org.springframework.scheduling.quartz.SpringBeanJobFactory;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import javax.sql.DataSource;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 
@@ -35,13 +39,15 @@ public class YudaoQuartzAutoConfiguration {
     @ConditionalOnProperty(prefix = "yudao.job", name = "type", havingValue = "quartz")
     @ConditionalOnMissingBean
     public SchedulerFactoryBean schedulerFactoryBean(QuartzProperties properties, ObjectProvider<DataSource> dataSource,
-                                                     ObjectProvider<PlatformTransactionManager> transactionManager) {
+                                                     ObjectProvider<PlatformTransactionManager> transactionManager,
+                                                     ApplicationContext applicationContext) {
         SchedulerFactoryBean factoryBean = new SchedulerFactoryBean();
         factoryBean.setSchedulerName(properties.getSchedulerName());
         factoryBean.setAutoStartup(properties.isAutoStartup());
         factoryBean.setWaitForJobsToCompleteOnShutdown(properties.isWaitForJobsToCompleteOnShutdown());
         factoryBean.setOverwriteExistingJobs(properties.isOverwriteExistingJobs());
         factoryBean.setStartupDelay((int) properties.getStartupDelay().getSeconds());
+        factoryBean.setJobFactory(new AutowireCapableBeanJobFactory(applicationContext.getAutowireCapableBeanFactory()));
 
         Properties quartzProperties = new Properties();
         quartzProperties.putAll(properties.getProperties());
@@ -79,6 +85,26 @@ public class YudaoQuartzAutoConfiguration {
     @ConditionalOnProperty(prefix = "yudao.job", name = "type", havingValue = "quartz")
     @EnableScheduling // 开启 Spring 自带的定时任务
     static class SchedulingConfiguration {
+    }
+
+    /**
+     * Quartz Job 由 Quartz 自行实例化，需要手动接回 Spring 的依赖注入。
+     */
+    static class AutowireCapableBeanJobFactory extends SpringBeanJobFactory {
+
+        private final AutowireCapableBeanFactory beanFactory;
+
+        AutowireCapableBeanJobFactory(AutowireCapableBeanFactory beanFactory) {
+            this.beanFactory = beanFactory;
+        }
+
+        @Override
+        protected Object createJobInstance(TriggerFiredBundle bundle) throws Exception {
+            Object job = super.createJobInstance(bundle);
+            beanFactory.autowireBean(Objects.requireNonNull(job));
+            return job;
+        }
+
     }
 
 }
