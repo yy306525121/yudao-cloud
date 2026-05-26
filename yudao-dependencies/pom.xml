@@ -35,6 +35,7 @@
         <kingbase.jdbc.version>9.0.1.jre7</kingbase.jdbc.version>
         <opengauss.jdbc.version>7.0.0-RC3-og</opengauss.jdbc.version>
         <taos.version>3.8.3</taos.version>
+        <orai18n.version>23.7.0.25.01</orai18n.version>
         <!-- 消息队列 -->
         <rocketmq-spring.version>2.3.5</rocketmq-spring.version>
         <!-- RPC 相关 -->
@@ -209,6 +210,13 @@
                 <groupId>cn.iocoder.cloud</groupId>
                 <artifactId>yudao-spring-boot-starter-mybatis</artifactId>
                 <version>${revision}</version>
+            </dependency>
+
+            <dependency>
+                <!--添加oracle数据库字符集支持-->
+                <groupId>com.oracle.database.nls</groupId>
+                <artifactId>orai18n</artifactId>
+                <version>${orai18n.version}</version>
             </dependency>
 
             <dependency>
