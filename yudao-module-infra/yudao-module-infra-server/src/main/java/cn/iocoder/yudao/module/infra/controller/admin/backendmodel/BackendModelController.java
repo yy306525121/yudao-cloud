@@ -2,6 +2,8 @@ package cn.iocoder.yudao.module.infra.controller.admin.backendmodel;
 
 import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
+import cn.iocoder.yudao.framework.apilog.core.annotation.ApiAccessLog;
+import cn.iocoder.yudao.framework.excel.core.util.ExcelUtils;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
 import cn.iocoder.yudao.module.infra.controller.admin.backendmodel.vo.*;
 import cn.iocoder.yudao.module.infra.dal.dataobject.backendmodel.BackendModelDO;
@@ -12,13 +14,19 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
+import static cn.iocoder.yudao.framework.apilog.core.enums.OperateTypeEnum.EXPORT;
 
 @Tag(name = "管理后台 - 后台模型")
 @RestController
@@ -46,6 +54,14 @@ public class BackendModelController {
         return success(true);
     }
 
+    @PutMapping("/update-fields")
+    @Operation(summary = "更新后台模型字段配置")
+    @PreAuthorize("@ss.hasPermission('infra:backend-model:update')")
+    public CommonResult<Boolean> updateBackendModelFields(@Valid @RequestBody BackendModelFieldUpdateReqVO updateReqVO) {
+        backendModelService.updateBackendModelFieldList(updateReqVO.getId(), updateReqVO.getFields());
+        return success(true);
+    }
+
     @DeleteMapping("/delete")
     @Operation(summary = "删除后台模型")
     @Parameter(name = "id", description = "编号", required = true)
@@ -70,7 +86,9 @@ public class BackendModelController {
     @PreAuthorize("@ss.hasPermission('infra:backend-model:query')")
     public CommonResult<BackendModelRespVO> getBackendModel(@RequestParam("id") Long id) {
         BackendModelDO backendModel = backendModelService.getBackendModel(id);
-        return success(BeanUtils.toBean(backendModel, BackendModelRespVO.class));
+        BackendModelRespVO respVO = BeanUtils.toBean(backendModel, BackendModelRespVO.class);
+        respVO.setFields(BeanUtils.toBean(backendModelService.getBackendModelFieldList(id), BackendModelFieldRespVO.class));
+        return success(respVO);
     }
 
     @GetMapping(value = "/page", params = "!id")
@@ -86,8 +104,9 @@ public class BackendModelController {
     @PreAuthorize("@ss.hasPermission('infra:backend-model:query')")
     public CommonResult<BackendModelQueryRespVO> getBackendModelQueryPage(@RequestParam("id") Long id,
                                                                           @RequestParam("pageNo") Integer pageNo,
-                                                                          @RequestParam("pageSize") Integer pageSize) {
-        return success(backendModelQueryService.getBackendModelPage(id, pageNo, pageSize));
+                                                                          @RequestParam("pageSize") Integer pageSize,
+                                                                          @RequestParam Map<String, String> params) {
+        return success(backendModelQueryService.getBackendModelPage(id, pageNo, pageSize, buildQueryParams(params)));
     }
 
     @GetMapping("/query-page")
@@ -95,8 +114,32 @@ public class BackendModelController {
     @PreAuthorize("@ss.hasPermission('infra:backend-model:query')")
     public CommonResult<BackendModelQueryRespVO> getBackendModelQueryPageAlias(@RequestParam("id") Long id,
                                                                                @RequestParam("pageNo") Integer pageNo,
-                                                                               @RequestParam("pageSize") Integer pageSize) {
-        return success(backendModelQueryService.getBackendModelPage(id, pageNo, pageSize));
+                                                                               @RequestParam("pageSize") Integer pageSize,
+                                                                               @RequestParam Map<String, String> params) {
+        return success(backendModelQueryService.getBackendModelPage(id, pageNo, pageSize, buildQueryParams(params)));
+    }
+
+    @GetMapping("/export-excel")
+    @Operation(summary = "导出后台模型查询结果")
+    @PreAuthorize("@ss.hasPermission('infra:backend-model:query')")
+    @ApiAccessLog(operateType = EXPORT)
+    public void exportBackendModel(@RequestParam("id") Long id,
+                                   @RequestParam Map<String, String> params,
+                                   HttpServletResponse response) throws IOException {
+        BackendModelQueryRespVO queryRespVO = backendModelQueryService.getBackendModelList(id, buildQueryParams(params));
+        List<BackendModelQueryRespVO.Field> fields = queryRespVO.getFields().stream()
+                .filter(field -> field.getListVisible() == null || field.getListVisible())
+                .toList();
+        List<List<String>> head = fields.stream().map(field -> List.of(field.getLabel())).toList();
+        List<List<Object>> data = new ArrayList<>();
+        for (Map<String, Object> row : queryRespVO.getPageResult().getList()) {
+            List<Object> rowData = new ArrayList<>();
+            for (BackendModelQueryRespVO.Field field : fields) {
+                rowData.add(row.get(field.getName()));
+            }
+            data.add(rowData);
+        }
+        ExcelUtils.write(response, "后台模型数据.xls", "数据", head, data);
     }
 
     @PostMapping("/preview")
@@ -104,6 +147,14 @@ public class BackendModelController {
     @PreAuthorize("@ss.hasPermission('infra:backend-model:query')")
     public CommonResult<BackendModelQueryRespVO> previewBackendModel(@Valid @RequestBody BackendModelPreviewReqVO reqVO) {
         return success(backendModelQueryService.previewBackendModel(reqVO));
+    }
+
+    private Map<String, String> buildQueryParams(Map<String, String> params) {
+        Map<String, String> queryParams = new HashMap<>(params);
+        queryParams.remove("id");
+        queryParams.remove("pageNo");
+        queryParams.remove("pageSize");
+        return queryParams;
     }
 
 }

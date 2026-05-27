@@ -7,6 +7,7 @@ DELETE FROM "infra_api_access_log";
 DELETE FROM "infra_api_error_log";
 DELETE FROM "infra_file_config";
 DELETE FROM "infra_data_source_config";
+DELETE FROM "infra_backend_model_field";
 DELETE FROM "infra_backend_model";
 DELETE FROM "infra_codegen_table";
 DELETE FROM "infra_codegen_column";

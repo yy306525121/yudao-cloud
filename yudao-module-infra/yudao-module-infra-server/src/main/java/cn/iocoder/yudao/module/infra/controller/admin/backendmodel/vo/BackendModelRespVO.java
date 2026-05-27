@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Schema(description = "管理后台 - 后台模型 Response VO")
 @Data
@@ -29,5 +30,8 @@ public class BackendModelRespVO {
 
     @Schema(description = "创建时间", requiredMode = Schema.RequiredMode.REQUIRED)
     private LocalDateTime createTime;
+
+    @Schema(description = "字段配置")
+    private List<BackendModelFieldRespVO> fields;
 
 }

@@ -1,6 +1,7 @@
 package cn.iocoder.yudao.module.infra.service.backendmodel;
 
 import cn.iocoder.yudao.framework.test.core.ut.BaseDbUnitTest;
+import cn.iocoder.yudao.module.infra.dal.mysql.backendmodel.BackendModelFieldMapper;
 import cn.iocoder.yudao.module.infra.dal.mysql.backendmodel.BackendModelMapper;
 import cn.iocoder.yudao.module.infra.service.db.DataSourceConfigService;
 import org.junit.jupiter.api.Test;
@@ -23,6 +24,8 @@ public class BackendModelQueryServiceImplTest extends BaseDbUnitTest {
 
     @MockitoBean
     private BackendModelMapper backendModelMapper;
+    @MockitoBean
+    private BackendModelFieldMapper backendModelFieldMapper;
     @MockitoBean
     private DataSourceConfigService dataSourceConfigService;
 

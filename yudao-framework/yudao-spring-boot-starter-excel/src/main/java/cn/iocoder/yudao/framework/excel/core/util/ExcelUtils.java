@@ -44,6 +44,18 @@ public class ExcelUtils {
         response.setContentType("application/vnd.ms-excel;charset=UTF-8");
     }
 
+    public static void write(HttpServletResponse response, String filename, String sheetName,
+                             List<List<String>> head, List<List<Object>> data) throws IOException {
+        FastExcelFactory.write(response.getOutputStream())
+                .head(head)
+                .autoCloseStream(false)
+                .registerWriteHandler(new ColumnWidthMatchStyleStrategy())
+                .registerConverter(new LongStringConverter())
+                .sheet(sheetName).doWrite(data);
+        response.addHeader("Content-Disposition", "attachment;filename=" + HttpUtils.encodeUtf8(filename));
+        response.setContentType("application/vnd.ms-excel;charset=UTF-8");
+    }
+
     public static <T> List<T> read(MultipartFile file, Class<T> head) throws IOException {
         // 参考 https://t.zsxq.com/zM77F 帖子，增加 try 处理，兼容 windows 场景
         try (InputStream inputStream = file.getInputStream()) {

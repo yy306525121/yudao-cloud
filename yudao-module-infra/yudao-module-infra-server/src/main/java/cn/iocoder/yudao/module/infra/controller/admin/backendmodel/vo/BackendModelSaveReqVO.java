@@ -1,10 +1,13 @@
 package cn.iocoder.yudao.module.infra.controller.admin.backendmodel.vo;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
+
+import java.util.List;
 
 @Schema(description = "管理后台 - 后台模型创建/修改 Request VO")
 @Data
@@ -33,5 +36,9 @@ public class BackendModelSaveReqVO {
     @Schema(description = "备注", example = "用于菜单动态展示")
     @Size(max = 500, message = "备注长度不能超过500个字符")
     private String remark;
+
+    @Schema(description = "字段配置")
+    @Valid
+    private List<BackendModelFieldSaveReqVO> fields;
 
 }

@@ -6,8 +6,11 @@ import cn.iocoder.yudao.framework.common.util.collection.ArrayUtils;
 import cn.iocoder.yudao.framework.test.core.ut.BaseDbUnitTest;
 import cn.iocoder.yudao.framework.test.core.util.RandomUtils;
 import cn.iocoder.yudao.module.infra.controller.admin.backendmodel.vo.BackendModelPageReqVO;
+import cn.iocoder.yudao.module.infra.controller.admin.backendmodel.vo.BackendModelQueryRespVO;
 import cn.iocoder.yudao.module.infra.controller.admin.backendmodel.vo.BackendModelSaveReqVO;
 import cn.iocoder.yudao.module.infra.dal.dataobject.backendmodel.BackendModelDO;
+import cn.iocoder.yudao.module.infra.dal.dataobject.backendmodel.BackendModelFieldDO;
+import cn.iocoder.yudao.module.infra.dal.mysql.backendmodel.BackendModelFieldMapper;
 import cn.iocoder.yudao.module.infra.dal.dataobject.db.DataSourceConfigDO;
 import cn.iocoder.yudao.module.infra.dal.mysql.backendmodel.BackendModelMapper;
 import cn.iocoder.yudao.module.infra.service.db.DataSourceConfigService;
@@ -16,6 +19,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import jakarta.annotation.Resource;
+import java.util.List;
 import java.util.function.Consumer;
 
 import static cn.iocoder.yudao.framework.common.util.object.ObjectUtils.cloneIgnoreId;
@@ -37,6 +41,8 @@ public class BackendModelServiceImplTest extends BaseDbUnitTest {
     private BackendModelServiceImpl backendModelService;
     @Resource
     private BackendModelMapper backendModelMapper;
+    @Resource
+    private BackendModelFieldMapper backendModelFieldMapper;
 
     @MockitoBean
     private DataSourceConfigService dataSourceConfigService;
@@ -51,12 +57,16 @@ public class BackendModelServiceImplTest extends BaseDbUnitTest {
             o.setSqlText("select 1");
         });
         when(dataSourceConfigService.getDataSourceConfig(eq(1L))).thenReturn(new DataSourceConfigDO());
+        when(backendModelQueryService.inferFields(eq(1L), eq("select 1"))).thenReturn(List.of(field("id")));
 
         Long id = backendModelService.createBackendModel(reqVO);
 
         assertNotNull(id);
         BackendModelDO backendModel = backendModelMapper.selectById(id);
         assertPojoEquals(reqVO, backendModel, "id");
+        List<BackendModelFieldDO> fields = backendModelFieldMapper.selectListByBackendModelId(id);
+        assertEquals(1, fields.size());
+        assertEquals("id", fields.get(0).getFieldName());
         verify(backendModelQueryService).validateSqlText(eq("select 1"));
     }
 
@@ -79,6 +89,7 @@ public class BackendModelServiceImplTest extends BaseDbUnitTest {
             o.setSqlText("select 1");
         });
         when(dataSourceConfigService.getDataSourceConfig(eq(1L))).thenReturn(new DataSourceConfigDO());
+        when(backendModelQueryService.inferFields(eq(1L), eq("select 1"))).thenReturn(List.of(field("id")));
 
         backendModelService.updateBackendModel(reqVO);
 
@@ -97,10 +108,23 @@ public class BackendModelServiceImplTest extends BaseDbUnitTest {
     public void testDeleteBackendModel_success() {
         BackendModelDO dbBackendModel = randomBackendModelDO();
         backendModelMapper.insert(dbBackendModel);
+        BackendModelFieldDO dbField = randomPojo(BackendModelFieldDO.class, o -> {
+            o.setBackendModelId(dbBackendModel.getId());
+            o.setFieldName("id");
+            o.setFieldLabel("编号");
+            o.setFieldOrder(1);
+            o.setListVisible(true);
+            o.setSearchable(true);
+            o.setSearchType("text");
+            o.setSearchOperator("eq");
+            o.setStatus(CommonStatusEnum.ENABLE.getStatus());
+        });
+        backendModelFieldMapper.insert(dbField);
 
         backendModelService.deleteBackendModel(dbBackendModel.getId());
 
         assertNull(backendModelMapper.selectById(dbBackendModel.getId()));
+        assertTrue(backendModelFieldMapper.selectListByBackendModelId(dbBackendModel.getId()).isEmpty());
     }
 
     @Test
@@ -138,6 +162,18 @@ public class BackendModelServiceImplTest extends BaseDbUnitTest {
             o.setSqlText("select 1");
         };
         return RandomUtils.randomPojo(BackendModelDO.class, ArrayUtils.append(consumer, consumers));
+    }
+
+    private static BackendModelQueryRespVO.Field field(String name) {
+        BackendModelQueryRespVO.Field field = new BackendModelQueryRespVO.Field();
+        field.setName(name);
+        field.setLabel(name);
+        field.setListVisible(true);
+        field.setSearchable(false);
+        field.setSearchType("text");
+        field.setSearchOperator("like");
+        field.setStatus(CommonStatusEnum.ENABLE.getStatus());
+        return field;
     }
 
 }
