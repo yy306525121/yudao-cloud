@@ -28,6 +28,9 @@ public class BackendModelFieldSaveReqVO {
     @NotNull(message = "是否在列表展示不能为空")
     private Boolean listVisible;
 
+    @Schema(description = "列表展示类型", example = "text")
+    private String listType;
+
     @Schema(description = "是否作为检索条件", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotNull(message = "是否作为检索条件不能为空")
     private Boolean searchable;

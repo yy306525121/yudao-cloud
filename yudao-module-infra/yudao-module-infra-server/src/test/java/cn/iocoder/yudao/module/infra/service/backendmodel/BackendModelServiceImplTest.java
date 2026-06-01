@@ -67,6 +67,7 @@ public class BackendModelServiceImplTest extends BaseDbUnitTest {
         List<BackendModelFieldDO> fields = backendModelFieldMapper.selectListByBackendModelId(id);
         assertEquals(1, fields.size());
         assertEquals("id", fields.get(0).getFieldName());
+        assertEquals("text", fields.get(0).getListType());
         verify(backendModelQueryService).validateSqlText(eq("select 1"));
     }
 
@@ -114,6 +115,7 @@ public class BackendModelServiceImplTest extends BaseDbUnitTest {
             o.setFieldLabel("编号");
             o.setFieldOrder(1);
             o.setListVisible(true);
+            o.setListType("text");
             o.setSearchable(true);
             o.setSearchType("text");
             o.setSearchOperator("eq");
@@ -169,6 +171,7 @@ public class BackendModelServiceImplTest extends BaseDbUnitTest {
         field.setName(name);
         field.setLabel(name);
         field.setListVisible(true);
+        field.setListType("text");
         field.setSearchable(false);
         field.setSearchType("text");
         field.setSearchOperator("like");

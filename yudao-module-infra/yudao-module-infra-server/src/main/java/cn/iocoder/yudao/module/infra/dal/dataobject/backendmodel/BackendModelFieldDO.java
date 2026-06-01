@@ -3,6 +3,7 @@ package cn.iocoder.yudao.module.infra.dal.dataobject.backendmodel;
 import cn.iocoder.yudao.framework.common.enums.CommonStatusEnum;
 import cn.iocoder.yudao.framework.mybatis.core.dataobject.BaseDO;
 import cn.iocoder.yudao.framework.tenant.core.aop.TenantIgnore;
+import cn.iocoder.yudao.module.infra.enums.backendmodel.BackendModelFieldListTypeEnum;
 import cn.iocoder.yudao.module.infra.enums.backendmodel.BackendModelFieldSearchOperatorEnum;
 import cn.iocoder.yudao.module.infra.enums.backendmodel.BackendModelFieldSearchTypeEnum;
 import com.baomidou.mybatisplus.annotation.KeySequence;
@@ -48,6 +49,13 @@ public class BackendModelFieldDO extends BaseDO {
      * 是否在列表展示
      */
     private Boolean listVisible;
+
+    /**
+     * 列表展示类型
+     *
+     * 枚举 {@link BackendModelFieldListTypeEnum}
+     */
+    private String listType;
 
     /**
      * 是否作为检索条件

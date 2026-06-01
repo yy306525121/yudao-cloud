@@ -182,6 +182,7 @@ CREATE TABLE IF NOT EXISTS "infra_backend_model_field" (
     "field_label" varchar(200) NOT NULL,
     "field_order" int NOT NULL,
     "list_visible" bit NOT NULL DEFAULT TRUE,
+    "list_type" varchar(20) NOT NULL DEFAULT 'text',
     "searchable" bit NOT NULL DEFAULT FALSE,
     "search_type" varchar(20) NOT NULL DEFAULT 'text',
     "search_operator" varchar(20) NOT NULL DEFAULT 'like',

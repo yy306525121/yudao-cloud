@@ -34,6 +34,9 @@ public class BackendModelQueryRespVO {
         @Schema(description = "是否在列表展示")
         private Boolean listVisible;
 
+        @Schema(description = "列表展示类型", example = "text")
+        private String listType;
+
         @Schema(description = "是否作为检索条件")
         private Boolean searchable;
 

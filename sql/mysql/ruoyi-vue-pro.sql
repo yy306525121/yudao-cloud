@@ -271,6 +271,7 @@ CREATE TABLE `infra_backend_model_field`  (
   `field_label` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '字段显示名',
   `field_order` int NOT NULL COMMENT '字段顺序',
   `list_visible` bit(1) NOT NULL DEFAULT b'1' COMMENT '是否在列表展示',
+  `list_type` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'text' COMMENT '列表展示类型',
   `searchable` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否作为检索条件',
   `search_type` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'text' COMMENT '检索控件类型',
   `search_operator` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'like' COMMENT '检索操作符',

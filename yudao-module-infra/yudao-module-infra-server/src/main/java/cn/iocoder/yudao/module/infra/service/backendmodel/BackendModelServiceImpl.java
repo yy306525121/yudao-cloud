@@ -1,5 +1,6 @@
 package cn.iocoder.yudao.module.infra.service.backendmodel;
 
+import cn.hutool.core.util.StrUtil;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
 import cn.iocoder.yudao.module.infra.controller.admin.backendmodel.vo.BackendModelPageReqVO;
@@ -10,6 +11,7 @@ import cn.iocoder.yudao.module.infra.dal.dataobject.backendmodel.BackendModelDO;
 import cn.iocoder.yudao.module.infra.dal.dataobject.backendmodel.BackendModelFieldDO;
 import cn.iocoder.yudao.module.infra.dal.mysql.backendmodel.BackendModelFieldMapper;
 import cn.iocoder.yudao.module.infra.dal.mysql.backendmodel.BackendModelMapper;
+import cn.iocoder.yudao.module.infra.enums.backendmodel.BackendModelFieldListTypeEnum;
 import cn.iocoder.yudao.module.infra.enums.backendmodel.BackendModelFieldSearchOperatorEnum;
 import cn.iocoder.yudao.module.infra.enums.backendmodel.BackendModelFieldSearchTypeEnum;
 import cn.iocoder.yudao.module.infra.service.db.DataSourceConfigService;
@@ -103,7 +105,10 @@ public class BackendModelServiceImpl implements BackendModelService {
 
     @Override
     public List<BackendModelFieldDO> getBackendModelFieldList(Long backendModelId) {
-        return backendModelFieldMapper.selectListByBackendModelId(backendModelId);
+        List<BackendModelFieldDO> fields = backendModelFieldMapper.selectListByBackendModelId(backendModelId);
+        fields.forEach(field -> field.setListType(StrUtil.blankToDefault(field.getListType(),
+                inferListType(field.getSearchType()))));
+        return fields;
     }
 
     @Override
@@ -151,6 +156,9 @@ public class BackendModelServiceImpl implements BackendModelService {
                     : Objects.requireNonNullElse(field.getFieldOrder(), i + 1));
             field.setListVisible(submittedField != null ? submittedField.getListVisible()
                     : Objects.requireNonNullElse(field.getListVisible(), true));
+            field.setListType(submittedField != null ? StrUtil.blankToDefault(submittedField.getListType(),
+                    inferListType(submittedField.getSearchType())) : Objects.requireNonNullElseGet(field.getListType(),
+                    () -> inferListType(field.getSearchType())));
             field.setSearchable(submittedField != null ? submittedField.getSearchable()
                     : Objects.requireNonNullElse(field.getSearchable(), false));
             field.setSearchType(submittedField != null ? submittedField.getSearchType()
@@ -175,6 +183,16 @@ public class BackendModelServiceImpl implements BackendModelService {
                     field.setSearchable(false);
                     backendModelFieldMapper.updateById(field);
                 });
+    }
+
+    private String inferListType(String searchType) {
+        if (BackendModelFieldSearchTypeEnum.DATE.getType().equals(searchType)) {
+            return BackendModelFieldListTypeEnum.DATE.getType();
+        }
+        if (BackendModelFieldSearchTypeEnum.DATE_RANGE.getType().equals(searchType)) {
+            return BackendModelFieldListTypeEnum.DATETIME.getType();
+        }
+        return BackendModelFieldListTypeEnum.TEXT.getType();
     }
 
 }

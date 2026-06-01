@@ -10,6 +10,7 @@ import cn.iocoder.yudao.module.infra.dal.dataobject.backendmodel.BackendModelFie
 import cn.iocoder.yudao.module.infra.dal.dataobject.db.DataSourceConfigDO;
 import cn.iocoder.yudao.module.infra.dal.mysql.backendmodel.BackendModelFieldMapper;
 import cn.iocoder.yudao.module.infra.dal.mysql.backendmodel.BackendModelMapper;
+import cn.iocoder.yudao.module.infra.enums.backendmodel.BackendModelFieldListTypeEnum;
 import cn.iocoder.yudao.module.infra.enums.backendmodel.BackendModelFieldSearchOperatorEnum;
 import cn.iocoder.yudao.module.infra.enums.backendmodel.BackendModelFieldSearchTypeEnum;
 import cn.iocoder.yudao.module.infra.service.db.DataSourceConfigService;
@@ -308,6 +309,7 @@ public class BackendModelQueryServiceImpl implements BackendModelQueryService {
         respField.setName(field.getFieldName());
         respField.setLabel(field.getFieldLabel());
         respField.setListVisible(field.getListVisible());
+        respField.setListType(StrUtil.blankToDefault(field.getListType(), inferListType(field.getSearchType())));
         respField.setSearchable(field.getSearchable());
         respField.setSearchType(field.getSearchType());
         respField.setSearchOperator(field.getSearchOperator());
@@ -324,6 +326,7 @@ public class BackendModelQueryServiceImpl implements BackendModelQueryService {
             field.setName(name);
             field.setLabel(name);
             field.setListVisible(true);
+            field.setListType(BackendModelFieldListTypeEnum.TEXT.getType());
             field.setSearchable(false);
             field.setSearchType(BackendModelFieldSearchTypeEnum.TEXT.getType());
             field.setSearchOperator(BackendModelFieldSearchOperatorEnum.LIKE.getOperator());
@@ -331,6 +334,16 @@ public class BackendModelQueryServiceImpl implements BackendModelQueryService {
             fields.add(field);
         }
         return fields;
+    }
+
+    private String inferListType(String searchType) {
+        if (BackendModelFieldSearchTypeEnum.DATE.getType().equals(searchType)) {
+            return BackendModelFieldListTypeEnum.DATE.getType();
+        }
+        if (BackendModelFieldSearchTypeEnum.DATE_RANGE.getType().equals(searchType)) {
+            return BackendModelFieldListTypeEnum.DATETIME.getType();
+        }
+        return BackendModelFieldListTypeEnum.TEXT.getType();
     }
 
     private String normalizeSql(String sqlText) {

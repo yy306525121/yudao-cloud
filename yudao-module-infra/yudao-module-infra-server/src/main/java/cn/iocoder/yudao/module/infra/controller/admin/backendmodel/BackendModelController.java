@@ -1,5 +1,6 @@
 package cn.iocoder.yudao.module.infra.controller.admin.backendmodel;
 
+import cn.hutool.core.util.StrUtil;
 import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.apilog.core.annotation.ApiAccessLog;
@@ -7,6 +8,7 @@ import cn.iocoder.yudao.framework.excel.core.util.ExcelUtils;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
 import cn.iocoder.yudao.module.infra.controller.admin.backendmodel.vo.*;
 import cn.iocoder.yudao.module.infra.dal.dataobject.backendmodel.BackendModelDO;
+import cn.iocoder.yudao.module.infra.enums.backendmodel.BackendModelFieldListTypeEnum;
 import cn.iocoder.yudao.module.infra.service.backendmodel.BackendModelQueryService;
 import cn.iocoder.yudao.module.infra.service.backendmodel.BackendModelService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -20,7 +22,13 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -135,7 +143,7 @@ public class BackendModelController {
         for (Map<String, Object> row : queryRespVO.getPageResult().getList()) {
             List<Object> rowData = new ArrayList<>();
             for (BackendModelQueryRespVO.Field field : fields) {
-                rowData.add(row.get(field.getName()));
+                rowData.add(formatExportValue(field, row.get(field.getName())));
             }
             data.add(rowData);
         }
@@ -155,6 +163,78 @@ public class BackendModelController {
         queryParams.remove("pageNo");
         queryParams.remove("pageSize");
         return queryParams;
+    }
+
+    private Object formatExportValue(BackendModelQueryRespVO.Field field, Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (!BackendModelFieldListTypeEnum.DATE.getType().equals(field.getListType())
+                && !BackendModelFieldListTypeEnum.DATETIME.getType().equals(field.getListType())) {
+            return value;
+        }
+        LocalDateTime dateTime = parseDateTime(value);
+        if (dateTime == null) {
+            return value;
+        }
+        if (BackendModelFieldListTypeEnum.DATE.getType().equals(field.getListType())) {
+            return dateTime.toLocalDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+        }
+        return dateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+    }
+
+    private LocalDateTime parseDateTime(Object value) {
+        if (value instanceof LocalDateTime localDateTime) {
+            return localDateTime;
+        }
+        if (value instanceof LocalDate localDate) {
+            return localDate.atStartOfDay();
+        }
+        if (value instanceof java.sql.Date date) {
+            return date.toLocalDate().atStartOfDay();
+        }
+        if (value instanceof java.sql.Timestamp timestamp) {
+            return timestamp.toLocalDateTime();
+        }
+        if (value instanceof Date date) {
+            return LocalDateTime.ofInstant(date.toInstant(), ZoneId.systemDefault());
+        }
+        if (value instanceof Number number) {
+            return parseNumberDateTime(number.longValue());
+        }
+        String text = value.toString();
+        if (StrUtil.isBlank(text)) {
+            return null;
+        }
+        if (text.matches("\\d+")) {
+            return parseNumberDateTime(Long.parseLong(text));
+        }
+        try {
+            return LocalDateTime.parse(text.replace(" ", "T"));
+        } catch (Exception ignored) {
+            try {
+                return LocalDate.parse(text).atStartOfDay();
+            } catch (Exception ignoredAgain) {
+                return null;
+            }
+        }
+    }
+
+    private LocalDateTime parseNumberDateTime(Long value) {
+        String text = value.toString();
+        if (text.matches("\\d{8}")) {
+            try {
+                return LocalDate.parse(text, DateTimeFormatter.ofPattern("yyyyMMdd")).atStartOfDay();
+            } catch (Exception ignored) {
+                return null;
+            }
+        }
+        long millis = text.length() == 10 ? value * 1000 : value;
+        try {
+            return LocalDateTime.ofInstant(Instant.ofEpochMilli(millis), ZoneId.systemDefault());
+        } catch (Exception ignored) {
+            return null;
+        }
     }
 
 }
