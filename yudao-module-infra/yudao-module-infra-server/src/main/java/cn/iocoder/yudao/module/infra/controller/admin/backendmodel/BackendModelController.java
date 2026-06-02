@@ -4,6 +4,7 @@ import cn.hutool.core.util.StrUtil;
 import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.apilog.core.annotation.ApiAccessLog;
+import cn.iocoder.yudao.framework.dict.core.DictFrameworkUtils;
 import cn.iocoder.yudao.framework.excel.core.util.ExcelUtils;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
 import cn.iocoder.yudao.module.infra.controller.admin.backendmodel.vo.*;
@@ -169,6 +170,9 @@ public class BackendModelController {
         if (value == null) {
             return null;
         }
+        if (BackendModelFieldListTypeEnum.DICT.getType().equals(field.getListType())) {
+            return formatDictExportValue(field, value);
+        }
         if (!BackendModelFieldListTypeEnum.DATE.getType().equals(field.getListType())
                 && !BackendModelFieldListTypeEnum.DATETIME.getType().equals(field.getListType())) {
             return value;
@@ -181,6 +185,23 @@ public class BackendModelController {
             return dateTime.toLocalDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
         }
         return dateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+    }
+
+    private Object formatDictExportValue(BackendModelQueryRespVO.Field field, Object value) {
+        if (StrUtil.isBlank(field.getDictType())) {
+            return value;
+        }
+        String text = value.toString();
+        if (StrUtil.isBlank(text)) {
+            return value;
+        }
+        List<String> values = text.contains(",") ? StrUtil.splitTrim(text, ",") : List.of(text);
+        List<String> labels = new ArrayList<>(values.size());
+        for (String item : values) {
+            String label = DictFrameworkUtils.parseDictDataLabel(field.getDictType(), item);
+            labels.add(StrUtil.blankToDefault(label, item));
+        }
+        return String.join(",", labels);
     }
 
     private LocalDateTime parseDateTime(Object value) {
