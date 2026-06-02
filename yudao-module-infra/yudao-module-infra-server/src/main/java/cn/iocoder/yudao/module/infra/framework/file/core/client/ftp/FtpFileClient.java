@@ -8,9 +8,17 @@ import cn.hutool.extra.ftp.FtpConfig;
 import cn.hutool.extra.ftp.FtpException;
 import cn.hutool.extra.ftp.FtpMode;
 import cn.iocoder.yudao.module.infra.framework.file.core.client.AbstractFileClient;
+import cn.iocoder.yudao.module.infra.framework.file.core.client.FileItem;
+import org.apache.commons.net.ftp.FTPFile;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Ftp 文件客户端
@@ -77,8 +85,52 @@ public class FtpFileClient extends AbstractFileClient<FtpFileClientConfig> {
         return out.toByteArray();
     }
 
+    @Override
+    public List<FileItem> list(String path) {
+        String dir = getFilePath(path);
+        reconnectIfTimeout();
+        return Arrays.stream(ftp.lsFiles(dir))
+                .filter(file -> !StrUtil.equalsAny(file.getName(), ".", ".."))
+                .map(file -> buildFileItem(path, file))
+                .sorted(Comparator.comparing(FileItem::getDirectory).reversed()
+                        .thenComparing(FileItem::getName, String.CASE_INSENSITIVE_ORDER))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public void rename(String path, String newName) {
+        String sourcePath = getFilePath(path);
+        String sourceName = FileUtil.getName(sourcePath);
+        String dir = StrUtil.removeSuffix(sourcePath, sourceName);
+        reconnectIfTimeout();
+        ftp.rename(sourcePath, dir + newName);
+    }
+
+    @Override
+    public void deleteDirectory(String path) {
+        reconnectIfTimeout();
+        ftp.delDir(getFilePath(path));
+    }
+
     private String getFilePath(String path) {
         return config.getBasePath() + StrUtil.SLASH + path;
+    }
+
+    private FileItem buildFileItem(String parentPath, FTPFile file) {
+        boolean directory = file.isDirectory();
+        String path = buildRelativePath(parentPath, file.getName());
+        return new FileItem()
+                .setName(file.getName())
+                .setPath(path)
+                .setDirectory(directory)
+                .setSize(directory ? null : file.getSize())
+                .setLastModifiedTime(file.getTimestamp() == null ? null
+                        : LocalDateTime.ofInstant(file.getTimestamp().toInstant(), ZoneId.systemDefault()))
+                .setUrl(directory ? null : super.formatFileUrl(config.getDomain(), path));
+    }
+
+    private String buildRelativePath(String parentPath, String name) {
+        return StrUtil.isEmpty(parentPath) ? name : parentPath + StrUtil.SLASH + name;
     }
 
     private synchronized void reconnectIfTimeout() {

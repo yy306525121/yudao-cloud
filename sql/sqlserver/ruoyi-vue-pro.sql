@@ -5436,6 +5436,12 @@ INSERT INTO system_menu (id, name, permission, type, sort, parent_id, path, icon
 GO
 INSERT INTO system_menu (id, name, permission, type, sort, parent_id, path, icon, component, component_name, status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted) VALUES (1092, N'文件删除', N'infra:file:delete', 3, 4, 1090, N'', N'', N'', NULL, 0, N'1', N'1', N'1', N'', N'2021-03-12 20:16:20', N'', N'2022-04-20 17:03:10', N'0')
 GO
+INSERT INTO system_menu (id, name, permission, type, sort, parent_id, path, icon, component, component_name, status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted) VALUES (6900, N'存储文件', N'', 2, 6, 1243, N'file-list', N'ep:folder-opened', N'infra/fileList/index', N'InfraFileList', 0, N'1', N'1', N'1', N'', N'2026-06-02 00:00:00', N'', N'2026-06-02 00:00:00', N'0')
+GO
+INSERT INTO system_menu (id, name, permission, type, sort, parent_id, path, icon, component, component_name, status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted) VALUES (6901, N'存储文件上传', N'infra:file:upload', 3, 2, 6900, N'', N'', N'', NULL, 0, N'1', N'1', N'1', N'', N'2026-06-02 00:00:00', N'', N'2026-06-02 00:00:00', N'0')
+GO
+INSERT INTO system_menu (id, name, permission, type, sort, parent_id, path, icon, component, component_name, status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted) VALUES (6902, N'存储文件重命名', N'infra:file:update', 3, 3, 6900, N'', N'', N'', NULL, 0, N'1', N'1', N'1', N'', N'2026-06-02 00:00:00', N'', N'2026-06-02 00:00:00', N'0')
+GO
 INSERT INTO system_menu (id, name, permission, type, sort, parent_id, path, icon, component, component_name, status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted) VALUES (1093, N'短信管理', N'', 1, 1, 2739, N'sms', N'ep:message', NULL, NULL, 0, N'1', N'1', N'1', N'1', N'2021-04-05 01:10:16', N'1', N'2024-04-22 23:56:03', N'0')
 GO
 INSERT INTO system_menu (id, name, permission, type, sort, parent_id, path, icon, component, component_name, status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted) VALUES (1094, N'短信渠道', N'', 2, 0, 1093, N'sms-channel', N'fa:stack-exchange', N'system/sms/channel/index', N'SystemSmsChannel', 0, N'1', N'1', N'1', N'', N'2021-04-01 11:07:15', N'1', N'2024-02-29 01:15:54', N'0')
@@ -13915,4 +13921,3 @@ GO
 COMMIT
 GO
 -- @formatter:on
-

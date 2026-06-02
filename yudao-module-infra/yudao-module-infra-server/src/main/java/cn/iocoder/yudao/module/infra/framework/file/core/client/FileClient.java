@@ -1,5 +1,7 @@
 package cn.iocoder.yudao.module.infra.framework.file.core.client;
 
+import java.util.List;
+
 /**
  * 文件客户端
  *
@@ -39,6 +41,35 @@ public interface FileClient {
      * @return 文件的内容
      */
     byte[] getContent(String path) throws Exception;
+
+    /**
+     * 获得目录下的文件列表
+     *
+     * @param path 相对目录
+     * @return 文件列表
+     */
+    default List<FileItem> list(String path) throws Exception {
+        throw new UnsupportedOperationException("不支持的操作");
+    }
+
+    /**
+     * 重命名文件或目录
+     *
+     * @param path    相对路径
+     * @param newName 新名称
+     */
+    default void rename(String path, String newName) throws Exception {
+        throw new UnsupportedOperationException("不支持的操作");
+    }
+
+    /**
+     * 删除空目录
+     *
+     * @param path 相对目录
+     */
+    default void deleteDirectory(String path) throws Exception {
+        throw new UnsupportedOperationException("不支持的操作");
+    }
 
     // ========== 文件签名，目前仅 S3 支持 ==========
 

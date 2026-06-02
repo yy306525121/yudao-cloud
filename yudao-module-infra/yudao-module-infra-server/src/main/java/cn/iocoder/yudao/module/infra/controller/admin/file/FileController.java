@@ -8,8 +8,13 @@ import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
 import cn.iocoder.yudao.framework.tenant.core.aop.TenantIgnore;
 import cn.iocoder.yudao.module.infra.controller.admin.file.vo.file.*;
+import cn.iocoder.yudao.module.infra.controller.admin.file.vo.storage.FileStorageItemRespVO;
+import cn.iocoder.yudao.module.infra.controller.admin.file.vo.storage.FileStorageRenameReqVO;
+import cn.iocoder.yudao.module.infra.controller.admin.file.vo.storage.FileStorageUploadReqVO;
 import cn.iocoder.yudao.module.infra.dal.dataobject.file.FileDO;
+import cn.iocoder.yudao.module.infra.framework.file.core.client.FileItem;
 import cn.iocoder.yudao.module.infra.service.file.FileService;
+import cn.iocoder.yudao.module.infra.service.file.FileStorageService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
@@ -42,6 +47,9 @@ public class FileController {
 
     @Resource
     private FileService fileService;
+
+    @Resource
+    private FileStorageService fileStorageService;
 
     @PostMapping("/upload")
     @Operation(summary = "上传文件", description = "模式一：后端上传文件")
@@ -132,6 +140,58 @@ public class FileController {
     public CommonResult<PageResult<FileRespVO>> getFilePage(@Valid FilePageReqVO pageVO) {
         PageResult<FileDO> pageResult = fileService.getFilePage(pageVO);
         return success(BeanUtils.toBean(pageResult, FileRespVO.class));
+    }
+
+    @GetMapping("/storage/list")
+    @Operation(summary = "获得存储目录文件列表")
+    @PreAuthorize("@ss.hasPermission('infra:file:query')")
+    public CommonResult<List<FileStorageItemRespVO>> getStorageFileList(@RequestParam("configId") Long configId,
+                                                                        @RequestParam(value = "path", required = false) String path,
+                                                                        @RequestParam(value = "keyword", required = false) String keyword) throws Exception {
+        List<FileItem> list = fileStorageService.listFiles(configId, path, keyword);
+        return success(BeanUtils.toBean(list, FileStorageItemRespVO.class));
+    }
+
+    @PostMapping("/storage/upload")
+    @Operation(summary = "上传文件到指定存储配置")
+    @PreAuthorize("@ss.hasPermission('infra:file:upload')")
+    public CommonResult<String> uploadStorageFile(@Valid FileStorageUploadReqVO uploadReqVO) throws Exception {
+        MultipartFile file = uploadReqVO.getFile();
+        byte[] content = IoUtil.readBytes(file.getInputStream());
+        return success(fileStorageService.uploadFile(uploadReqVO.getConfigId(), content, file.getOriginalFilename(),
+                uploadReqVO.getDirectory(), file.getContentType()));
+    }
+
+    @GetMapping("/storage/download")
+    @Operation(summary = "下载存储文件")
+    @PreAuthorize("@ss.hasPermission('infra:file:query')")
+    public void downloadStorageFile(HttpServletResponse response,
+                                    @RequestParam("configId") Long configId,
+                                    @RequestParam("path") String path) throws Exception {
+        byte[] content = fileStorageService.getFileContent(configId, path);
+        if (content == null) {
+            log.warn("[downloadStorageFile][configId({}) path({}) 文件不存在]", configId, path);
+            response.setStatus(HttpStatus.NOT_FOUND.value());
+            return;
+        }
+        writeAttachment(response, path, content);
+    }
+
+    @PutMapping("/storage/rename")
+    @Operation(summary = "重命名存储文件")
+    @PreAuthorize("@ss.hasPermission('infra:file:update')")
+    public CommonResult<Boolean> renameStorageFile(@Valid @RequestBody FileStorageRenameReqVO renameReqVO) throws Exception {
+        fileStorageService.renameFile(renameReqVO.getConfigId(), renameReqVO.getPath(), renameReqVO.getNewName());
+        return success(true);
+    }
+
+    @DeleteMapping("/storage/delete")
+    @Operation(summary = "删除存储文件")
+    @PreAuthorize("@ss.hasPermission('infra:file:delete')")
+    public CommonResult<Boolean> deleteStorageFile(@RequestParam("configId") Long configId,
+                                                   @RequestParam("path") String path) throws Exception {
+        fileStorageService.deleteFile(configId, path);
+        return success(true);
     }
 
 }
