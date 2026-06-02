@@ -28,7 +28,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
-import static cn.iocoder.yudao.framework.common.enums.CommonStatusEnum.DISABLE;
 import static cn.iocoder.yudao.framework.common.enums.CommonStatusEnum.ENABLE;
 import static cn.iocoder.yudao.module.infra.enums.ErrorCodeConstants.BACKEND_MODEL_NOT_EXISTS;
 import static cn.iocoder.yudao.module.infra.enums.ErrorCodeConstants.DATA_SOURCE_CONFIG_NOT_EXISTS;
@@ -177,12 +176,7 @@ public class BackendModelServiceImpl implements BackendModelService {
 
         existingFields.stream()
                 .filter(field -> !inferredFieldNames.contains(field.getFieldName()))
-                .forEach(field -> {
-                    field.setStatus(DISABLE.getStatus());
-                    field.setListVisible(false);
-                    field.setSearchable(false);
-                    backendModelFieldMapper.updateById(field);
-                });
+                .forEach(field -> backendModelFieldMapper.deleteById(field.getId()));
     }
 
     private String inferListType(String searchType) {

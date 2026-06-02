@@ -99,6 +99,38 @@ public class BackendModelServiceImplTest extends BaseDbUnitTest {
     }
 
     @Test
+    public void testUpdateBackendModel_syncFields_deleteOldAndKeepExistingConfig() {
+        BackendModelDO dbBackendModel = randomBackendModelDO();
+        backendModelMapper.insert(dbBackendModel);
+        backendModelFieldMapper.insert(randomBackendModelFieldDO(dbBackendModel.getId(), "a", o -> {
+            o.setFieldLabel("字段A");
+            o.setSearchable(true);
+            o.setSearchOperator("eq");
+        }));
+        backendModelFieldMapper.insert(randomBackendModelFieldDO(dbBackendModel.getId(), "b"));
+        BackendModelSaveReqVO reqVO = randomPojo(BackendModelSaveReqVO.class, o -> {
+            o.setId(dbBackendModel.getId());
+            o.setDataSourceConfigId(1L);
+            o.setSqlText("select a, c");
+            o.setFields(null);
+        });
+        when(dataSourceConfigService.getDataSourceConfig(eq(1L))).thenReturn(new DataSourceConfigDO());
+        when(backendModelQueryService.inferFields(eq(1L), eq("select a, c"))).thenReturn(List.of(field("a"), field("c")));
+
+        backendModelService.updateBackendModel(reqVO);
+
+        List<BackendModelFieldDO> fields = backendModelFieldMapper.selectListByBackendModelId(dbBackendModel.getId());
+        assertEquals(2, fields.size());
+        BackendModelFieldDO fieldA = fields.stream().filter(field -> "a".equals(field.getFieldName())).findFirst().orElseThrow();
+        assertEquals("字段A", fieldA.getFieldLabel());
+        assertTrue(fieldA.getSearchable());
+        assertEquals("eq", fieldA.getSearchOperator());
+        BackendModelFieldDO fieldC = fields.stream().filter(field -> "c".equals(field.getFieldName())).findFirst().orElseThrow();
+        assertEquals("c", fieldC.getFieldLabel());
+        assertFalse(fieldC.getSearchable());
+    }
+
+    @Test
     public void testUpdateBackendModel_notExists() {
         BackendModelSaveReqVO reqVO = randomPojo(BackendModelSaveReqVO.class);
 
@@ -164,6 +196,24 @@ public class BackendModelServiceImplTest extends BaseDbUnitTest {
             o.setSqlText("select 1");
         };
         return RandomUtils.randomPojo(BackendModelDO.class, ArrayUtils.append(consumer, consumers));
+    }
+
+    @SafeVarargs
+    private static BackendModelFieldDO randomBackendModelFieldDO(Long backendModelId, String fieldName,
+                                                                 Consumer<BackendModelFieldDO>... consumers) {
+        Consumer<BackendModelFieldDO> consumer = o -> {
+            o.setBackendModelId(backendModelId);
+            o.setFieldName(fieldName);
+            o.setFieldLabel(fieldName);
+            o.setFieldOrder(1);
+            o.setListVisible(true);
+            o.setListType("text");
+            o.setSearchable(false);
+            o.setSearchType("text");
+            o.setSearchOperator("like");
+            o.setStatus(CommonStatusEnum.ENABLE.getStatus());
+        };
+        return RandomUtils.randomPojo(BackendModelFieldDO.class, ArrayUtils.append(consumer, consumers));
     }
 
     private static BackendModelQueryRespVO.Field field(String name) {
