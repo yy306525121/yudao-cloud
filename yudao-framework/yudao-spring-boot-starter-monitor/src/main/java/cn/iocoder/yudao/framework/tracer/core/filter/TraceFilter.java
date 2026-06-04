@@ -1,6 +1,7 @@
 package cn.iocoder.yudao.framework.tracer.core.filter;
 
 import cn.iocoder.yudao.framework.common.util.monitor.TracerUtils;
+import org.slf4j.MDC;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import jakarta.servlet.FilterChain;
@@ -8,6 +9,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.UUID;
 
 /**
  * Trace 过滤器，打印 traceId 到 header 中返回
@@ -19,15 +21,34 @@ public class TraceFilter extends OncePerRequestFilter {
     /**
      * Header 名 - 链路追踪编号
      */
-    private static final String HEADER_NAME_TRACE_ID = "trace-id";
+    static final String HEADER_NAME_TRACE_ID = "trace-id";
+
+    /**
+     * MDC Key - 链路追踪编号
+     */
+    static final String MDC_KEY_TRACE_ID = "traceId";
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws IOException, ServletException {
-        // 设置响应 traceId
-        response.addHeader(HEADER_NAME_TRACE_ID, TracerUtils.getTraceId());
-        // 继续过滤
-        chain.doFilter(request, response);
+        String traceId = getOrCreateTraceId();
+        try {
+            // 设置日志和响应 traceId
+            MDC.put(MDC_KEY_TRACE_ID, traceId);
+            response.addHeader(HEADER_NAME_TRACE_ID, traceId);
+            // 继续过滤
+            chain.doFilter(request, response);
+        } finally {
+            MDC.remove(MDC_KEY_TRACE_ID);
+        }
+    }
+
+    private static String getOrCreateTraceId() {
+        String traceId = TracerUtils.getTraceId();
+        if (traceId == null || traceId.isBlank() || "N/A".equals(traceId)) {
+            return UUID.randomUUID().toString();
+        }
+        return traceId;
     }
 
 }

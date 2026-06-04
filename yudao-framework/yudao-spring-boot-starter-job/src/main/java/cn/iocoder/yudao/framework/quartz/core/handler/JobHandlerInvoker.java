@@ -4,6 +4,7 @@ import cn.hutool.core.date.LocalDateTimeUtil;
 import cn.hutool.core.thread.ThreadUtil;
 import cn.iocoder.yudao.framework.quartz.core.enums.JobDataKeyEnum;
 import cn.iocoder.yudao.framework.quartz.core.service.JobLogFrameworkService;
+import cn.iocoder.yudao.framework.quartz.core.util.JobTraceUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.quartz.DisallowConcurrentExecution;
 import org.quartz.JobExecutionContext;
@@ -43,15 +44,17 @@ public class JobHandlerInvoker extends QuartzJobBean {
         LocalDateTime startTime = LocalDateTime.now();
         String data = null;
         Throwable exception = null;
-        try {
-            jobLogId = jobLogFrameworkService.createJobLog(jobId, startTime, jobHandlerName, jobHandlerParam, refireCount + 1);
-            data = jobHandlerRegistry.execute(jobId, jobHandlerName, jobHandlerParam);
-        } catch (Throwable ex) {
-            exception = ex;
-        }
+        try (JobTraceUtils.TraceScope ignored = JobTraceUtils.beginTrace(jobId)) {
+            try {
+                jobLogId = jobLogFrameworkService.createJobLog(jobId, startTime, jobHandlerName, jobHandlerParam, refireCount + 1);
+                data = jobHandlerRegistry.execute(jobId, jobHandlerName, jobHandlerParam);
+            } catch (Throwable ex) {
+                exception = ex;
+            }
 
-        updateJobLogResultAsync(jobLogId, startTime, data, exception, executionContext);
-        handleException(exception, refireCount, retryCount, retryInterval);
+            updateJobLogResultAsync(jobLogId, startTime, data, exception, executionContext);
+            handleException(exception, refireCount, retryCount, retryInterval);
+        }
     }
 
     private void updateJobLogResultAsync(Long jobLogId, LocalDateTime startTime, String data, Throwable exception,
